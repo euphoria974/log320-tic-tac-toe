@@ -25,7 +25,7 @@ class Board {
         board[m.getRow()][m.getCol()] = mark;
     }
 
-    public Iterable<Move> getPossibleMoves() {
+    public ArrayList<Move> getPossibleMoves() {
         ArrayList<Move> moves = new ArrayList<>();
         for (int i = 0; i < SIZE; ++i) {
             for (int j = 0; j < SIZE; ++j) {
