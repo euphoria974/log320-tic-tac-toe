@@ -27,4 +27,9 @@ class Move {
     public void setCol(int c) {
         col = c;
     }
+
+    @Override
+    public String toString() {
+        return String.format("(row: %d, col: %d)", row, col);
+    }
 }
