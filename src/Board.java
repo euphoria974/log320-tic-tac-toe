@@ -1,133 +1,112 @@
 import java.util.ArrayList;
 
-// IMPORTANT: Il ne faut pas changer la signature des méthodes de cette classe, ni le nom de la classe.
-// Vous pouvez par contre ajouter d'autres méthodes (ça devrait être le cas)
-class Board {
-    public final int SIZE = 3;
-    // board[row][col]
-    private Mark[][] board;
+// IMPORTANT: Il ne faut pas changer la signature des méthodes
+// de cette classe, ni le nom de la classe.
+// Vous pouvez par contre ajouter d'autres méthodes (ça devrait 
+// être le cas)
+class Board
+{
+    private final Mark[][] BOARD = new Mark[3][3];
 
     // Ne pas changer la signature de cette méthode
-    public Board() {
-        // initialise le board avec des cases vides
-        board = new Mark[SIZE][SIZE];
-        for (int i = 0; i < SIZE; i++) {
-            for (int j = 0; j < SIZE; j++) {
-                board[i][j] = Mark.EMPTY;
+    public Board()
+    {
+        clear();
+    }
+
+    public ArrayList<Move> getPossibleMoves()
+    {
+        ArrayList<Move> possibleMoves = new ArrayList<>();
+
+        for (int i = 0; i < 3; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                if (BOARD[i][j] == Mark.EMPTY)
+                {
+                    possibleMoves.add(new Move(i, j));
+                }
+            }
+        }
+
+        return possibleMoves;
+    }
+
+    public void clear()
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                BOARD[i][j] = Mark.EMPTY;
             }
         }
     }
 
-    // Place la pièce 'mark' sur le plateau, à la position spécifiée dans Move
+    // Place la pièce 'mark' sur le plateau, à la
+    // position spécifiée dans Move
     //
     // Ne pas changer la signature de cette méthode
-    public void play(Move m, Mark mark) {
-        board[m.getRow()][m.getCol()] = mark;
-    }
-
-    public ArrayList<Move> getPossibleMoves() {
-        ArrayList<Move> moves = new ArrayList<>();
-        for (int i = 0; i < SIZE; ++i) {
-            for (int j = 0; j < SIZE; ++j) {
-                if (board[i][j] == Mark.EMPTY || board[i][j] == null)
-                    moves.add(new Move(i, j));
-            }
+    public void play(Move move, Mark mark)
+    {
+        if (mark == Mark.EMPTY || BOARD[move.getRow()][move.getCol()] != Mark.EMPTY)
+        {
+            throw new IllegalArgumentException("Invalid move");
         }
-        return moves;
+
+        BOARD[move.getRow()][move.getCol()] = mark;
     }
 
-    public boolean isFull() {
-        for (int i = 0; i < SIZE; ++i) {
-            for (int j = 0; j < SIZE; ++j) {
-                if (board[i][j] == Mark.EMPTY || board[i][j] == null)
-                    return false;
-            }
-        }
-        return true;
+    public void undo(Move move)
+    {
+        BOARD[move.getRow()][move.getCol()] = Mark.EMPTY;
     }
 
-    // retourne 100 pour une victoire
-    // -100 pour une défaite
-    // 0 pour un match nul
+    public void print()
+    {
+        System.out.println(BOARD[0][0] + "|" + BOARD[0][1] + "|" + BOARD[0][2]);
+        System.out.println("-+-+-");
+        System.out.println(BOARD[1][0] + "|" + BOARD[1][1] + "|" + BOARD[1][2]);
+        System.out.println("-+-+-");
+        System.out.println(BOARD[2][0] + "|" + BOARD[2][1] + "|" + BOARD[2][2]);
+        System.out.println("~~~~~");
+    }
+
+    // retourne  100 pour une victoire
+    //          -100 pour une défaite
+    //           0   pour un match nul
     // Ne pas changer la signature de cette méthode
-    public int evaluate(Mark mark) {
-        // TODO trouver un moyen plus efficace d'évaluer
-
-        // vérifie les lignes
-        for (int i = 0; i < SIZE; ++i) {
-            Mark curMark = board[i][0];
-            if (curMark == Mark.EMPTY)
-                continue;
-
-            boolean lineFound = true;
-            for (int j = 1; j < SIZE; ++j) {
-                if (board[i][j] != curMark) {
-                    lineFound = false;
-                    break;
-                }
-            }
-            if (lineFound)
-                return curMark == mark ? 100 : -100;
+    public int evaluate(Mark mark)
+    {
+        if (checkVictory(mark))
+        {
+            return 100;
         }
 
-        // vérifie les colonnes
-        for (int j = 0; j < SIZE; ++j) {
-            Mark curMark = board[0][j];
-            if (curMark == Mark.EMPTY)
-                continue;
-
-            boolean lineFound = true;
-            for (int i = 1; i < SIZE; ++i) {
-                if (board[i][j] != curMark) {
-                    lineFound = false;
-                    break;
-                }
-            }
-            if (lineFound)
-                return curMark == mark ? 100 : -100;
+        Mark enemyMark = mark == Mark.X ? Mark.O : Mark.X;
+        if (checkVictory(enemyMark))
+        {
+            return -100;
         }
 
-        // vérifie les diagonales
-        Mark curMark = board[0][0];
-        if (curMark != Mark.EMPTY) {
-            boolean lineFound = true;
-            for (int i = 1; i < SIZE; ++i) {
-                if (board[i][i] != curMark) {
-                    lineFound = false;
-                    break;
-                }
-            }
-            if (lineFound)
-                return curMark == mark ? 100 : -100;
-        }
-
-        curMark = board[0][SIZE - 1];
-        if (curMark != Mark.EMPTY) {
-            boolean lineFound = true;
-            for (int i = 1; i < SIZE; ++i) {
-                if (board[i][SIZE - i - 1] != curMark) {
-                    lineFound = false;
-                    break;
-                }
-            }
-            if (lineFound)
-                return curMark == mark ? 100 : -100;
-        }
-
-        // si aucune ligne n'a été trouvée
-        return 0; // partie nulle
+        return 0;
     }
 
-    public void print() {
-        for (int i = 0; i < SIZE; ++i) {
-            for (int j = 0; j < SIZE; ++j) {
-                System.out.print(String.format(" %s ", board[i][j]));
-                if (j < SIZE - 1)
-                    System.out.print("|");
-            }
-            if (i < SIZE - 1)
-                System.out.println("\n-----------");
+    private boolean checkVictory(Mark mark)
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            if (BOARD[i][0] == mark && BOARD[i][1] == mark && BOARD[i][2] == mark) return true;
         }
-        System.out.print("\n");
+
+        for (int i = 0; i < 3; i++)
+        {
+            if (BOARD[0][i] == mark && BOARD[1][i] == mark && BOARD[2][i] == mark) return true;
+        }
+
+        if (BOARD[0][0] == mark && BOARD[1][1] == mark && BOARD[2][2] == mark) return true;
+        if (BOARD[0][2] == mark && BOARD[1][1] == mark && BOARD[2][0] == mark) return true;
+
+        return false;
     }
 }

@@ -1,10 +1,14 @@
 import java.util.ArrayList;
+import java.util.List;
 
 // IMPORTANT: Il ne faut pas changer la signature des méthodes
 // de cette classe, ni le nom de la classe.
 // Vous pouvez par contre ajouter d'autres méthodes (ça devrait 
 // être le cas)
-class CPUPlayer {
+class CPUPlayer
+{
+    private final Mark MARK;
+    private final Mark ENEMY_MARK;
 
     // Contient le nombre de noeuds visités (le nombre
     // d'appel à la fonction MinMax ou Alpha Beta)
@@ -12,142 +16,186 @@ class CPUPlayer {
     // au début de votre MinMax ou Alpha Beta.
     private int numExploredNodes;
 
-    private Mark maxPlayer;
-
     // Le constructeur reçoit en paramètre le
     // joueur MAX (X ou O)
-    public CPUPlayer(Mark cpu) {
-        this.maxPlayer = cpu;
+    public CPUPlayer(Mark cpu)
+    {
+        MARK = cpu;
+        ENEMY_MARK = cpu == Mark.X ? Mark.O : Mark.X;
     }
 
     // Ne pas changer cette méthode
-    public int getNumOfExploredNodes() {
+    public int getNumOfExploredNodes(){
         return numExploredNodes;
     }
 
-    // Retourne la liste des coups possibles. Cette liste contient
+    // Retourne la liste des coups possibles.  Cette liste contient
     // plusieurs coups possibles si et seuleument si plusieurs coups
     // ont le même score.
-    public ArrayList<Move> getNextMoveMinMax(Board board) {
+    public ArrayList<Move> getNextMoveMinMax(Board board)
+    {
         numExploredNodes = 0;
 
-        ArrayList<Move> moves = new ArrayList<>();
-        int maxScore = Integer.MIN_VALUE;
-        Mark minPlayer = maxPlayer == Mark.X ? Mark.O : Mark.X;
+        ArrayList<Move> bestMoves = new ArrayList<>();
+        int bestScore = Integer.MIN_VALUE;
 
-        for (Move move : board.getPossibleMoves()) {
-            board.play(move, maxPlayer);
-            int score = minMax(board, minPlayer); // calculate score for each move
-            if (score > maxScore) {
-                maxScore = score;
-                moves.clear();
-                moves.add(move);
-            } else if (score == maxScore) {
-                moves.add(move);
+        for (Move move : board.getPossibleMoves())
+        {
+            numExploredNodes++;
+            board.play(move, MARK);
+
+            int score = minimax(board, false);
+
+            board.undo(move);
+
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestMoves.clear();
+                bestMoves.add(move);
             }
-            board.play(move, Mark.EMPTY); // cancel move (backtracking)
+            else if (score == bestScore)
+            {
+                bestMoves.add(move);
+            }
         }
 
-        return moves;
+        return bestMoves;
     }
 
-    private int minMax(Board board, Mark player) {
-        int evaluation = board.evaluate(maxPlayer);
-        if (evaluation != 0 || board.isFull()) { // if the game has a winner or the board is full
-            return evaluation;
+    private int minimax(Board board, boolean isMax)
+    {
+        List<Move> possibleMoves = board.getPossibleMoves();
+
+        int score = board.evaluate(MARK);
+
+        if (score != 0 || possibleMoves.isEmpty()) {
+            return score;
         }
 
-        ++numExploredNodes;
+        numExploredNodes++;
 
-        int score;
-        Mark nextPlayer = player == Mark.X ? Mark.O : Mark.X;
-        if (player == maxPlayer) { // maximizing
-            score = Integer.MIN_VALUE;
-            for (Move move : board.getPossibleMoves()) {
-                board.play(move, player);
-                int s = minMax(board, nextPlayer); //  recursively calculate best score from this position
-                score = Math.max(score, s);
-                board.play(move, Mark.EMPTY); // cancel move (backtracking)
+        if (isMax)
+        {
+            int maxScore = Integer.MIN_VALUE;
+
+            for (Move move : possibleMoves)
+            {
+                board.play(move, MARK);
+                int value = minimax(board, false);
+                board.undo(move);
+
+                maxScore = Math.max(maxScore, value);
             }
-        } else { // minimizing
-            score = Integer.MAX_VALUE;
-            for (Move move : board.getPossibleMoves()) {
-                board.play(move, player);
-                int s = minMax(board, nextPlayer); //  recursively calculate best score from this position
-                score = Math.min(score, s);
-                board.play(move, Mark.EMPTY); // cancel move (backtracking)
-            }
+
+            return maxScore;
         }
+        else
+        {
+            int minScore = Integer.MAX_VALUE;
 
-        return score;
+            for (Move move : possibleMoves)
+            {
+                board.play(move, ENEMY_MARK);
+                int value = minimax(board, true);
+                board.undo(move);
+
+                minScore = Math.min(minScore, value);
+            }
+
+            return minScore;
+        }
     }
 
-    // Retourne la liste des coups possibles. Cette liste contient
+    // Retourne la liste des coups possibles.  Cette liste contient
     // plusieurs coups possibles si et seuleument si plusieurs coups
     // ont le même score.
-    public ArrayList<Move> getNextMoveAB(Board board) {
+    public ArrayList<Move> getNextMoveAB(Board board)
+    {
         numExploredNodes = 0;
 
-        ArrayList<Move> moves = new ArrayList<>();
-        int maxScore = Integer.MIN_VALUE;
-        Mark minPlayer = maxPlayer == Mark.X ? Mark.O : Mark.X;
+        ArrayList<Move> bestMoves = new ArrayList<>();
+        int bestScore = Integer.MIN_VALUE;
 
-        for (Move move : board.getPossibleMoves()) {
-            board.play(move, maxPlayer);
-            // calculate score foreach move
-            int score = minMaxAlphaBeta(board, minPlayer, Integer.MIN_VALUE, Integer.MAX_VALUE);
-            // System.out.println("Score for move " + move + " : " + score);
-            if (score > maxScore) {
-                maxScore = score;
-                moves.clear();
-                moves.add(move);
-            } else if (score == maxScore) {
-                moves.add(move);
+        for (Move move : board.getPossibleMoves())
+        {
+            numExploredNodes++;
+            board.play(move, MARK);
+
+            int score = alphaBeta(board, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
+
+            board.undo(move);
+
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestMoves.clear();
+                bestMoves.add(move);
             }
-            board.play(move, Mark.EMPTY); // cancel move (backtracking)
+            else if (score == bestScore)
+            {
+                bestMoves.add(move);
+            }
         }
 
-        return moves;
+        return bestMoves;
     }
 
-    private int minMaxAlphaBeta(Board board, Mark player, int alpha, int beta) {
-        int evaluation = board.evaluate(maxPlayer);
-        if (evaluation != 0 || board.isFull()) { // if the game has a winner or the board is full
-            return evaluation;
+    private int alphaBeta(Board board, boolean isMax, int alpha, int beta)
+    {
+        List<Move> possibleMoves = board.getPossibleMoves();
+
+        int score = board.evaluate(MARK);
+
+        if (score != 0 || possibleMoves.isEmpty()) {
+            return score;
         }
 
-        ++numExploredNodes;
+        numExploredNodes++;
 
-        int score;
-        Mark nextPlayer = player == Mark.X ? Mark.O : Mark.X;
-        if (player == maxPlayer) { // maximizing
-            score = Integer.MIN_VALUE;
-            for (Move move : board.getPossibleMoves()) {
-                board.play(move, player);
-                // recursively calculate best score from this position
-                int s = minMaxAlphaBeta(board, nextPlayer, alpha, beta);
-                score = Math.max(score, s);
-                board.play(move, Mark.EMPTY); // cancel move (backtracking)
-                if (score >= beta) {
+        if (isMax)
+        {
+            int maxScore = Integer.MIN_VALUE;
+
+            for (Move move : possibleMoves)
+            {
+                board.play(move, MARK);
+                int value = alphaBeta(board, false, alpha, beta);
+                board.undo(move);
+
+                maxScore = Math.max(maxScore, value);
+
+                if (maxScore >= beta)
+                {
                     break;
                 }
-                alpha = Math.max(score, alpha);
+
+                alpha = Math.max(alpha, maxScore);
             }
-        } else { // minimizing
-            score = Integer.MAX_VALUE;
-            for (Move move : board.getPossibleMoves()) {
-                board.play(move, player);
-                // recursively calculate best score from this position
-                int s = minMaxAlphaBeta(board, nextPlayer, alpha, beta);
-                score = Math.min(score, s);
-                board.play(move, Mark.EMPTY); // cancel move (backtracking)
-                if (score <= alpha) { // alpha-beta pruning
-                    break;
-                }
-                beta = Math.min(score, beta);
-            }
+
+            return maxScore;
         }
+        else
+        {
+            int minScore = Integer.MAX_VALUE;
 
-        return score;
+            for (Move move : possibleMoves)
+            {
+                board.play(move, ENEMY_MARK);
+                int value = alphaBeta(board, true, alpha, beta);
+                board.undo(move);
+
+                minScore = Math.min(minScore, value);
+
+                if (minScore <= alpha)
+                {
+                    break;
+                }
+
+                beta = Math.min(beta, minScore);
+            }
+
+            return minScore;
+        }
     }
 }
